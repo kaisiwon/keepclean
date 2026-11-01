@@ -7,14 +7,11 @@
         "microphone": "*"
     },
     "files": [
-        "main.blocks",
-        "main.ts",
         "README.md",
-        "teacher.ts"
+        "teacher.ts",
+        "student.ts"
     ],
-    "testFiles": [
-        "test.ts"
-    ],
+    "testFiles": [],
     "targetVersions": {
         "target": "9.0.12",
         "targetId": "microbit"
