@@ -9,10 +9,12 @@
  */
 
 const TEACHER_RADIO_GROUP = 1
-const TEACHER_TOTAL_SECTIONS = 5
+const TEACHER_TOTAL_SECTIONS = 1
 
 let totalCleanedCount = 0
 let teacherCleanedSections: number[] = []
+
+basic.showString("Teacher")
 
 // Helper to check if a specific section is already in the cleaned list
 function isSectionRecorded(section: number): boolean {
@@ -89,4 +91,3 @@ radio.setGroup(TEACHER_RADIO_GROUP)
 radio.setTransmitSerialNumber(true)
 basic.showString("T")
 basic.showNumber(totalCleanedCount)
-

@@ -10,11 +10,13 @@
  */
 
 const RADIO_GROUP = 1
-const TOTAL_SECTIONS = 5
+const TOTAL_SECTIONS = 1
 
 let currentSection = 1
 let sectionsCleanedCount = 0
 let cleanedSections: number[] = []
+
+basic.showString("Student")
 
 function isSectionCleaned(section: number): boolean {
     return cleanedSections.indexOf(section) !== -1
@@ -45,6 +47,7 @@ input.onButtonPressed(Button.A, function () {
 
         // Visual feedback: checkmark followed by updated counter
         basic.showIcon(IconNames.Yes)
+        music.play(music.stringPlayable("C C C E A B G C", 240), music.PlaybackMode.UntilDone)
         basic.pause(500)
         basic.showNumber(sectionsCleanedCount)
     } else {
@@ -80,6 +83,10 @@ radio.onReceivedValue(function (name: string, value: number) {
         basic.showNumber(sectionsCleanedCount)
     }
 })
+
+if (cleanedSections.length === TOTAL_SECTIONS) {
+    basic.showString("All sections cleaned! Good job!")
+}
 
 // Initialise Student Micro:bit
 radio.setGroup(RADIO_GROUP)
