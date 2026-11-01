@@ -21,6 +21,8 @@ To edit this repository directly within the MakeCode editor:
 2. Click on **Import**, then click on **Import URL**
 3. Paste `https://github.com` and click **Import**
 
+The template/made code is here: [https://makecode.microbit.org/S42352-84574-18570-15914]
+
 ## Metadata
 
 * **Target:** PXT/microbit
