@@ -1,24 +1,29 @@
+# KeepClean
 
-> Open this page at [https://kaisiwon.github.io/keepclean/](https://kaisiwon.github.io/keepclean/)
+**KeepClean** is a BBC micro:bit project and MakeCode extension designed to help keep your classroom nice, clean, and tidy. 
+
+You can view the project page online at: [https://kaisiwon.github.io/keepclean/](https://kaisiwon.github.io/keepclean/)
 
 ## Use as Extension
 
-This repository can be added as an **extension** in MakeCode.
+This repository can be added as an **extension** in MakeCode:
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **New Project**
-* click on **Extensions** under the gearwheel menu
-* search for **https://github.com/kaisiwon/keepclean** and import
+1. Open [https://microbit.org](https://microbit.org)
+2. Click on **New Project**
+3. Click on **Extensions** under the gearwheel menu (top right)
+4. Search for `https://github.com` and click import
 
-## Edit this project
+## Edit this Project
 
-To edit this repository in MakeCode.
+To edit this repository directly within the MakeCode editor:
 
-* open [https://makecode.microbit.org/](https://makecode.microbit.org/)
-* click on **Import** then click on **Import URL**
-* paste **https://github.com/kaisiwon/keepclean** and click import
+1. Open [https://microbit.org](https://microbit.org)
+2. Click on **Import**, then click on **Import URL**
+3. Paste `https://github.com` and click **Import**
 
-#### Metadata (used for search, rendering)
+## Metadata
 
-* for PXT/microbit
-<script src="https://makecode.com/gh-pages-embed.js"></script><script>makeCodeRender("{{ site.makecode.home_url }}", "{{ site.github.owner_name }}/{{ site.github.repository_name }}");</script>
+* **Target:** PXT/microbit
+* **Maintainer:** [kaisiwon](https://github.com)
+
+Published with GitHub Pages.
