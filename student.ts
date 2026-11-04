@@ -1,232 +1,284 @@
 /**
- * Student Micro:bit - KeepClean
- * Platform: BBC micro:bit (MakeCode JavaScript / Static TypeScript)
+ * KeepClean - Classroom Cleaning Organiser (Student & Teacher in one file)
+ * Platform: BBC micro:bit (MakeCode TypeScript / JavaScript)
  *
- * Controls:
- * - Button A: Mark the current cleaning section as checked & cleaned,
- *             increment the cleaned counter, and notify the Teacher Micro:bit via radio.
- * - Button B: Cycle through cleaning sections (1 to TOTAL_SECTIONS).
- * - Button A+B: Display the total number of sections checked and cleaned.
+ * ================= HOW TO USE =================
+ * 1. CHOOSE YOUR ROLE AT STARTUP:
+ *    - Press Button A -> STUDENT Micro:bit ("S")
+ *    - Press Button B -> TEACHER Micro:bit ("T")
+ *
+ * 2. STUDENT CONTROLS (Role = "student"):
+ *    - Button A   : Check & clean current section, increment counter (+1), and send to Teacher.
+ *    - Button B   : Switch to the next cleaning section (1 to TOTAL_SECTIONS).
+ *    - Button A+B : Show how many sections you have checked & cleaned ("C:").
+ *    - Shake      : Send a quick "Clean" alert to the Teacher.
+ *
+ * 3. TEACHER CONTROLS (Role = "teacher"):
+ *    - Button A   : Show total number of sections checked & cleaned across the class.
+ *    - Button B   : Show remaining uncleaned sections ("R:"), or a Happy face if all are clean!
+ *    - Button A+B : Reset all counters back to 0 on Teacher and all Student Micro:bits.
+ * ==============================================
  */
-// Line 1 should start right here
-let role = ""
 
-radio.setGroup(1)
-role = "none"
-basic.showString("A=S B=T")
+// ---------------- 1. CONFIGURATION & STATE ----------------
+const RADIO_GROUP = 1
+const TOTAL_SECTIONS = 5
 
-input.onButtonPressed(Button.A, function () {
-    role = "student"
-    basic.showString("S")
-})
+// Role can be "none", "student", or "teacher"
+let role = "none"
 
-input.onButtonPressed(Button.B, function () {
-    role = "teacher"
-    basic.showString("T")
-})
+// Student state
+let currentSection = 1
+let sectionsCleanedCount = 0
+let studentCleanedSections: number[] = []
 
-// STUDENT LOGIC
-input.onGesture(Gesture.Shake, function () {
-    if (role == "student") {
-        radio.sendString("Clean")
-    }
-})
+// Teacher state
+let totalCleanedCount = 0
+let teacherCleanedSections: number[] = []
 
-// TEACHER LOGIC
-radio.onReceivedString(function (receivedString) {
-    if (role == "teacher") {
-        if (receivedString == "Clean") {
-            basic.showIcon(IconNames.Angry)
-        }
-    }
-})
-function waitUntilButtonPressed() {
-    // Loop runs while BOTH buttons are untouched
-    while (!input.buttonIsPressed(Button.A) && !input.buttonIsPressed(Button.B)) {
-        basic.pause(10) // Small pause prevents the micro:bit from freezing
-    }
+
+// ---------------- 2. HELPER FUNCTIONS ----------------
+
+// Check if the student already cleaned a specific section
+function isStudentSectionCleaned(section: number): boolean {
+    return studentCleanedSections.indexOf(section) !== -1
 }
 
-if (role == "student") {
-    const RADIO_GROUP = 1
-    const TOTAL_SECTIONS = 1
+// Check if the teacher already recorded a specific section
+function isTeacherSectionRecorded(section: number): boolean {
+    return teacherCleanedSections.indexOf(section) !== -1
+}
 
-    let currentSection = 1
-    let sectionsCleanedCount = 0
-    let cleanedSections: number[] = []
+// Display the student's currently selected section number on the LED screen
+function showStudentScreen(): void {
+    basic.showNumber(currentSection)
+}
 
-    basic.showString("Student")
+// Display the teacher's total cleaned counter on the LED screen
+function showTeacherScreen(): void {
+    basic.showNumber(totalCleanedCount)
+}
 
-    function isSectionCleaned(section: number): boolean {
-        return cleanedSections.indexOf(section) !== -1
+
+// ---------------- 3. BUTTON A HANDLER ----------------
+input.onButtonPressed(Button.A, function () {
+    led.stopAnimation()
+
+    // Step 1: Role Selection at startup
+    if (role == "none") {
+        role = "student"
+        basic.showIcon(IconNames.Yes)
+        basic.pause(300)
+        basic.showString("S")
+        showStudentScreen()
+        return
     }
 
-    function showCurrentSection(): void {
-        basic.showNumber(currentSection)
+    // Step 2: Student Button A -> Mark current section as checked & cleaned
+    if (role == "student") {
+        if (!isStudentSectionCleaned(currentSection)) {
+            // Record cleaned section and increment the counter
+            studentCleanedSections.push(currentSection)
+            sectionsCleanedCount += 1
+
+            // Send section number and updated counter to Teacher via radio
+            radio.sendValue("clean", currentSection)
+            radio.sendValue("count", sectionsCleanedCount)
+
+            // Visible & audible confirmation for the student
+            basic.showIcon(IconNames.Yes)
+            music.play(music.stringPlayable("C5 E5 G5 C6", 240), music.PlaybackMode.UntilDone)
+            basic.pause(300)
+
+            // Show updated count of sections checked and cleaned
+            basic.showString("C:")
+            basic.showNumber(sectionsCleanedCount)
+            basic.pause(400)
+
+            // Celebrate if this student has cleaned all sections
+            if (studentCleanedSections.length >= TOTAL_SECTIONS) {
+                basic.showIcon(IconNames.Happy)
+                basic.pause(600)
+                basic.showString("DONE!")
+            }
+
+            showStudentScreen()
+        } else {
+            // Section was already cleaned earlier; show checkmark and current count
+            basic.showIcon(IconNames.SmallDiamond)
+            basic.pause(400)
+            basic.showNumber(sectionsCleanedCount)
+            basic.pause(400)
+            showStudentScreen()
+        }
+        return
     }
 
-    input.onButtonPressed(Button.B, function () {
+    // Step 3: Teacher Button A -> View total sections checked & cleaned
+    if (role == "teacher") {
+        basic.showString("T:")
+        showTeacherScreen()
+    }
+})
+
+
+// ---------------- 4. BUTTON B HANDLER ----------------
+input.onButtonPressed(Button.B, function () {
+    led.stopAnimation()
+
+    // Step 1: Role Selection at startup
+    if (role == "none") {
+        role = "teacher"
+        basic.showIcon(IconNames.Yes)
+        basic.pause(300)
+        basic.showString("T")
+        showTeacherScreen()
+        return
+    }
+
+    // Step 2: Student Button B -> Cycle to the next cleaning section (1..TOTAL_SECTIONS)
+    if (role == "student") {
         currentSection += 1
         if (currentSection > TOTAL_SECTIONS) {
             currentSection = 1
         }
-        showCurrentSection()
-    })
+        showStudentScreen()
+        return
+    }
 
-    // Button A: Check and clean the current section, increment counter, and send via radio
-    input.onButtonPressed(Button.A, function () {
-        if (!isSectionCleaned(currentSection)) {
-            // Record section as cleaned and increment counter
-            cleanedSections.push(currentSection)
-            sectionsCleanedCount += 1
-
-            // Notify the Teacher Micro:bit via radio
-            radio.sendValue("clean", currentSection)
-            radio.sendValue("count", sectionsCleanedCount)
-
-            // Visual feedback: checkmark followed by updated counter
-            basic.showIcon(IconNames.Yes)
-            music.play(music.stringPlayable("C C C E A B G C", 240), music.PlaybackMode.UntilDone)
-            basic.pause(500)
-            basic.showNumber(sectionsCleanedCount)
+    // Step 3: Teacher Button B -> Check which sections still need cleaning
+    if (role == "teacher") {
+        if (teacherCleanedSections.length >= TOTAL_SECTIONS) {
+            basic.showIcon(IconNames.Happy)
+            basic.pause(600)
+            basic.showString("ALL CLEAN!")
+            showTeacherScreen()
         } else {
-            // Section was already checked and cleaned; show status and current counter
-            basic.showIcon(IconNames.SmallDiamond)
-            basic.pause(300)
-            basic.showNumber(sectionsCleanedCount)
+            basic.showString("R:")
+            for (let section = 1; section <= TOTAL_SECTIONS; section++) {
+                if (!isTeacherSectionRecorded(section)) {
+                    basic.showNumber(section)
+                    basic.pause(400)
+                }
+            }
+            showTeacherScreen()
         }
-    })
+    }
+})
 
-    // Button A+B: View the current count of sections checked and cleaned
-    input.onButtonPressed(Button.AB, function () {
+
+// ---------------- 5. BUTTON A+B HANDLER ----------------
+input.onButtonPressed(Button.AB, function () {
+    led.stopAnimation()
+
+    // Student Button A+B -> Show student's cleaned counter
+    if (role == "student") {
         basic.showString("C:")
         basic.showNumber(sectionsCleanedCount)
         basic.pause(500)
-        showCurrentSection()
-    })
-
-    // Handle incoming radio messages from the Teacher Micro:bit
-    radio.onReceivedValue(function (name: string, value: number) {
-        if (name === "reset" && value === 1) {
-            // Reset session state when instructed by the Teacher Micro:bit
-            sectionsCleanedCount = 0
-            cleanedSections = []
-            currentSection = 1
-            basic.showIcon(IconNames.No)
-            basic.pause(500)
-            showCurrentSection()
-        } else if (name === "ack" && value === currentSection) {
-            // Brief confirmation that the Teacher Micro:bit logged the section
-            basic.showIcon(IconNames.Heart)
-            basic.pause(400)
-            basic.showNumber(sectionsCleanedCount)
-        }
-    })
-
-    if (cleanedSections.length === TOTAL_SECTIONS) {
-        basic.showString("All sections cleaned! Good job!")
+        showStudentScreen()
+        return
     }
 
-    // Initialise Student Micro:bit
-    radio.setGroup(RADIO_GROUP)
-    radio.setTransmitSerialNumber(true)
-    basic.showString("S")
-    showCurrentSection()
-}
-if (role == "teacher") {
+    // Teacher Button A+B -> Reset all counters on Teacher and Student Micro:bits
+    if (role == "teacher") {
+        totalCleanedCount = 0
+        teacherCleanedSections = []
+        radio.sendValue("reset", 1)
 
-/**
- * Teacher Micro:bit - Classroom Cleaning Organiser
- * Platform: BBC micro:bit (MakeCode JavaScript / Static TypeScript)
- *
- * Controls:
- * - Button A: Display the total number of sections checked and cleaned.
- * - Button B: Check remaining uncleaned sections (or show celebration if all are done).
- * - Button A+B: Reset the cleaned counter on the Teacher and all Student Micro:bits.
- */
-
-const TEACHER_RADIO_GROUP = 1
-const TEACHER_TOTAL_SECTIONS = 1
-
-let totalCleanedCount = 0
-let teacherCleanedSections: number[] = []
-
-basic.showString("Teacher")
-
-// Helper to check if a specific section is already in the cleaned list
-function isSectionRecorded(section: number): boolean {
-    return teacherCleanedSections.indexOf(section) !== -1
-}
-
-// Button A: Show total number of sections checked and cleaned
-input.onButtonPressed(Button.A, function () {
-    basic.showNumber(totalCleanedCount)
-})
-
-// Button B: Show remaining uncleaned section numbers (or Happy icon if all sections are clean)
-input.onButtonPressed(Button.B, function () {
-    if (teacherCleanedSections.length >= TEACHER_TOTAL_SECTIONS) {
-        basic.showIcon(IconNames.Happy)
-        basic.pause(600)
-        basic.showNumber(totalCleanedCount)
-    } else {
-        basic.showString("R:")
-        for (let section = 1; section <= TEACHER_TOTAL_SECTIONS; section++) {
-            if (!isSectionRecorded(section)) {
-                basic.showNumber(section)
-                basic.pause(300)
-            }
-        }
-        basic.showNumber(totalCleanedCount)
+        basic.showIcon(IconNames.No)
+        basic.pause(500)
+        showTeacherScreen()
     }
 })
 
-// Button A+B: Reset all counters locally and broadcast reset to all Student Micro:bits
-input.onButtonPressed(Button.AB, function () {
-    totalCleanedCount = 0
-    teacherCleanedSections = []
-    radio.sendValue("reset", 1)
 
-    basic.showIcon(IconNames.No)
-    basic.pause(500)
-    basic.showNumber(totalCleanedCount)
-})
-
-// Receive cleaning updates from Student Micro:bits via radio
-radio.onReceivedValue(function (name: string, value: number) {
-    if (name === "clean") {
-        let sectionNumber = value
-
-        // Increment counter tracking total sections checked and cleaned
-        totalCleanedCount += 1
-
-        // Record the section number if not already recorded
-        if (!isSectionRecorded(sectionNumber)) {
-            teacherCleanedSections.push(sectionNumber)
-        }
-
-        // Send acknowledgment back to the Student Micro:bit
-        radio.sendValue("ack", sectionNumber)
-
-        // Display checkmark, the cleaned section number, and updated total counter
+// ---------------- 6. SHAKE GESTURE ----------------
+input.onGesture(Gesture.Shake, function () {
+    if (role == "student") {
+        radio.sendString("Clean")
         basic.showIcon(IconNames.Yes)
         basic.pause(400)
-        basic.showString("S" + sectionNumber)
-        basic.pause(300)
-
-        if (teacherCleanedSections.length >= TEACHER_TOTAL_SECTIONS) {
-            basic.showIcon(IconNames.Happy)
-            basic.pause(600)
-        }
-
-        basic.showNumber(totalCleanedCount)
+        showStudentScreen()
     }
 })
 
-// Initialise Teacher Micro:bit
-radio.setGroup(TEACHER_RADIO_GROUP)
+
+// ---------------- 7. RADIO COMMUNICATION ----------------
+
+// Handle string messages (e.g. Shake alert)
+radio.onReceivedString(function (receivedString: string) {
+    if (role == "teacher" && receivedString == "Clean") {
+        basic.showIcon(IconNames.EighthNote)
+        basic.pause(500)
+        showTeacherScreen()
+    }
+})
+
+// Handle key-value messages ("clean", "ack", "reset")
+radio.onReceivedValue(function (name: string, value: number) {
+    led.stopAnimation()
+
+    // STUDENT receives messages from Teacher
+    if (role == "student") {
+        if (name == "reset" && value == 1) {
+            // Reset student counter and cleaned sections list
+            sectionsCleanedCount = 0
+            studentCleanedSections = []
+            currentSection = 1
+
+            basic.showIcon(IconNames.No)
+            basic.pause(500)
+            showStudentScreen()
+        } else if (name == "ack" && value == currentSection) {
+            // Teacher confirmed receiving the cleaned section
+            basic.showIcon(IconNames.Heart)
+            basic.pause(400)
+            showStudentScreen()
+        }
+        return
+    }
+
+    // TEACHER receives messages from Students
+    if (role == "teacher") {
+        if (name == "clean") {
+            let sectionNumber = value
+
+            // Increment total counter of sections checked and cleaned
+            totalCleanedCount += 1
+
+            // Track unique section number
+            if (!isTeacherSectionRecorded(sectionNumber)) {
+                teacherCleanedSections.push(sectionNumber)
+            }
+
+            // Send confirmation back to the Student Micro:bit
+            radio.sendValue("ack", sectionNumber)
+
+            // Play chime and display which section was cleaned + new total count
+            basic.showIcon(IconNames.Yes)
+            music.play(music.stringPlayable("E5 G5", 240), music.PlaybackMode.UntilDone)
+            basic.showString("S" + sectionNumber)
+            basic.pause(300)
+
+            // If all sections are now clean, show a Happy face celebration
+            if (teacherCleanedSections.length >= TOTAL_SECTIONS) {
+                basic.showIcon(IconNames.Happy)
+                basic.pause(600)
+            }
+
+            // Keep the updated total counter visible on the Teacher's screen
+            showTeacherScreen()
+        }
+    }
+})
+
+
+// ---------------- 8. STARTUP ----------------
+radio.setGroup(RADIO_GROUP)
 radio.setTransmitSerialNumber(true)
-basic.showString("T")
-basic.showNumber(totalCleanedCount)
+basic.showString("A=S B=T")
+if (role == "none") {
+    basic.showString("?")
 }
 
