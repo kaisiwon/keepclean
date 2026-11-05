@@ -1,5 +1,5 @@
 # KeepClean
-Latest project: [https://makecode.microbit.org/S50444-09307-72435-24010]
+Latest project: [(https://makecode.microbit.org/S50444-09307-72435-24010/)](https://makecode.microbit.org/S50444-09307-72435-24010)
 **KeepClean** is a BBC micro:bit project and MakeCode extension designed to help keep your classroom nice, clean, and tidy. 
 
 You can view the project page online at: [https://kaisiwon.github.io/keepclean/](https://kaisiwon.github.io/keepclean/)
