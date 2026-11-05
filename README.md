@@ -1,5 +1,6 @@
 # KeepClean
-
+Latest project: [https://makecode.microbit.org/S50444-09307-72435-24010]
+{https://makecode.microbit.org/S50444-09307-72435-24010}
 **KeepClean** is a BBC micro:bit project and MakeCode extension designed to help keep your classroom nice, clean, and tidy. 
 
 You can view the project page online at: [https://kaisiwon.github.io/keepclean/](https://kaisiwon.github.io/keepclean/)
@@ -21,7 +22,6 @@ To edit this repository directly within the MakeCode editor:
 2. Click on **Import**, then click on **Import URL**
 3. Paste `https://github.com` and click **Import**
 
-The template/made code is here: [https://makecode.microbit.org/S50444-09307-72435-24010]
 
 ## Metadata
 
